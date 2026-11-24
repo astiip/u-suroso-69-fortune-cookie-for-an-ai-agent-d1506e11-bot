@@ -3,7 +3,7 @@
 // the agent's context window fills before it can finish reading the slip
 // it was just handed. Setup grants the fortune prophetic power; the twist
 // is that the prophecy is about the reader's own memory, not its future.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 const MAX_LEN = 140;
@@ -19,4 +19,11 @@ if ([...LINE].length > MAX_LEN || LINE.trim() === "" || LINE.includes("\n")) {
 const out = process.env.ENTRY_OUTPUT ?? "/output/entry.txt";
 mkdirSync(dirname(out) || ".", { recursive: true });
 writeFileSync(out, LINE, "utf8");
+
+// Read-back verification: the file on disk must be byte-exact, so a
+// truncated or re-encoded write fails loudly instead of reaching the gate.
+const written = readFileSync(out, "utf8");
+if (written !== LINE || [...written].length > MAX_LEN) {
+  throw new Error("read-back verification failed: entry.txt is not byte-exact");
+}
 console.log(LINE);
